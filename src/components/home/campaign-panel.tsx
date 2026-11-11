@@ -39,7 +39,7 @@ export function CampaignPanel({
         alt={image.alt}
         fill
         sizes={sizes}
-        className="media-cover"
+        className="media-cover media-zoom"
       />
       <div className="media-scrim absolute inset-0" />
       <div className="absolute inset-x-0 bottom-0 p-4 md:p-6">

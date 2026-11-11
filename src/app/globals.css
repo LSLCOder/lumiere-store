@@ -434,6 +434,18 @@
     object-fit: cover;
   }
 
+  /* Slow, slight zoom on a photo when its linked card or panel (a `.group`
+     with clipped overflow) is hovered. Pointer devices only. */
+  .media-zoom {
+    transition: transform 0.9s var(--ease-rise);
+  }
+
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .group:hover .media-zoom {
+      transform: scale(1.04);
+    }
+  }
+
   /* Text over imagery: a bottom scrim keeps it legible. */
   .media-scrim {
     background-image: linear-gradient(

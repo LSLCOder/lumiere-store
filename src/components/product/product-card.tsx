@@ -7,7 +7,8 @@ import { formatPrice } from "@/lib/utils";
 /**
  * The whole card is one near-white plate: photograph, then a small
  * left-aligned label (name, price) inset from the plate edge.
- * No borders, shadows or image effects; the photograph does the work.
+ * No borders or shadows; the photograph does the work, with a slight
+ * zoom on hover.
  * A badge appears only when the product has a status worth flagging.
  */
 export function ProductCard({ product }: { product: Product }) {
@@ -16,13 +17,13 @@ export function ProductCard({ product }: { product: Product }) {
 
   return (
     <Link href={`/products/${product.slug}`} className="tile group block">
-      <div className="relative aspect-[4/5]">
+      <div className="relative aspect-[4/5] overflow-hidden">
         <Image
           src={product.image.src}
           alt={product.image.alt}
           fill
           sizes="(min-width: 64rem) 25vw, (min-width: 48rem) 33vw, 50vw"
-          className="media-cover"
+          className="media-cover media-zoom"
         />
         {badge ? (
           <span className="badge bg-canvas text-ink absolute top-3 left-3 px-1.5 py-1">
