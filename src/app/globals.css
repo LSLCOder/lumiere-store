@@ -1,26 +1,596 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ==========================================================================
+   Lumière design system: luxury-house principles
+
+   Palette  monochrome. White canvas, pure black ink, near-white product
+            plates. Black is the action color; there is no chromatic accent.
+   Type     Jost, a geometric sans, set small and tight. 12px carries the
+            interface (nav, labels, product names, prices); 16px is for
+            headings and reading text; the one large size is a thin 24→32px
+            statement. Tracking is negative throughout. Hierarchy comes from
+            weight and case (bold uppercase vs. regular sentence case), not
+            from size.
+   Shape    Square. No radii, no shadows, no gradients. 1px hairlines only.
+   Layout   Imagery leads: full-bleed media and edge-to-edge product grids
+            with 1px seams. Text blocks are compact and sit in wide gutters.
+
+   Tokens live in @theme so Tailwind generates utilities for them
+   (bg-surface, text-ink-muted, text-headline, max-w-page …).
+   `static` emits every variable so raw CSS below can reference them.
+   ========================================================================== */
+
+@theme static {
+  /* ---- Breakpoints: sm < 768 ≤ md < 1024 ≤ lg < 1440 ≤ xl ------------- */
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 90rem;
+
+  /* ---- Color (light). Dark values are swapped in @layer base. --------- */
+  --color-canvas: #ffffff; /* page */
+  --color-surface: #fbfbfb; /* product plates, panels, footer */
+  --color-surface-strong: #efefef; /* pressed / placeholder depth */
+  --color-ink: #000000; /* text and every action */
+  --color-ink-muted: #707070; /* secondary text, ≥4.5:1 on canvas + surface */
+  --color-hairline: #e0e0e0; /* 1px rules, outlines, inputs */
+  --color-accent: #000000; /* actions are ink; kept as a token for swaps */
+  --color-accent-hover: #2b2b2b;
+  --color-on-accent: #ffffff;
+  --color-link: #000000;
+  --color-scrim: rgb(0 0 0 / 0.6); /* overlays, text on imagery */
+
+  /* ---- Typography ----------------------------------------------------- */
+  --font-sans:
+    var(--font-jost), ui-sans-serif, system-ui, "Helvetica Neue", Arial,
+    sans-serif;
+
+  /* Editorial statement: the only large size. Thin, sentence case. */
+  --text-display: clamp(1.5rem, 1.2rem + 1.2vw, 2rem); /* 24 → 32 */
+  --text-display--line-height: 1.5;
+  --text-display--letter-spacing: -0.03em;
+  --text-display--font-weight: 200;
+
+  /* Section and page headings: bold uppercase via .headline. */
+  --text-headline: 1rem; /* 16 */
+  --text-headline--line-height: 1.5;
+  --text-headline--letter-spacing: -0.03em;
+  --text-headline--font-weight: 700;
+
+  /* Sentence-case title: product name on its page, panel captions. */
+  --text-title: 1rem; /* 16 */
+  --text-title--line-height: 1.5;
+  --text-title--letter-spacing: -0.04em;
+  --text-title--font-weight: 500;
+
+  --text-body: 1rem; /* 16: paragraphs meant to be read */
+  --text-body--line-height: 1.5;
+  --text-body--letter-spacing: -0.02em;
+
+  --text-caption: 0.75rem; /* 12: nav, product names, prices, UI text */
+  --text-caption--line-height: 1.3334;
+  --text-caption--letter-spacing: -0.03em;
+
+  --text-micro: 0.625rem; /* 10: badges on plates */
+  --text-micro--line-height: 1.2;
+  --text-micro--letter-spacing: -0.03em;
+
+  /* ---- Layout widths (also max-w-prose / max-w-page / max-w-wide) ----- */
+  --container-prose: 40rem; /* ≈70 characters of body text */
+  --container-page: 80rem; /* 1280: editorial + product detail */
+  --container-wide: 120rem; /* 1920: grids run nearly edge to edge */
+
+  /* ---- Shape: square everywhere --------------------------------------- */
+  --radius-tile: 0;
+  --radius-control: 0;
+
+  --ease-standard: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --ease-rise: cubic-bezier(0.2, 0.7, 0.1, 1);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+/* ==========================================================================
+   Base
+   ========================================================================== */
 
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --gutter: 1rem; /* 16 */
+    --nav-height: 3.5rem; /* 56 */
+    color-scheme: light;
+  }
+
+  @media (width >= 48rem) {
+    :root {
+      --gutter: 1.5rem; /* 24 */
+      --nav-height: 4rem; /* 64 */
+    }
+  }
+
+  @media (width >= 64rem) {
+    :root {
+      --gutter: 4rem; /* 64 */
+      --nav-height: 4.5rem; /* 72 */
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --color-canvas: #0c0c0c;
+      --color-surface: #171717;
+      --color-surface-strong: #222222;
+      --color-ink: #f2f2f0;
+      --color-ink-muted: #a6a6a3;
+      --color-hairline: #2f2f2f;
+      --color-accent: #f2f2f0;
+      --color-accent-hover: #d0d0cd;
+      --color-on-accent: #0c0c0c;
+      --color-link: #f2f2f0;
+    }
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: calc(var(--nav-height) + 1rem);
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    letter-spacing: var(--text-body--letter-spacing);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-variant-numeric: tabular-nums; /* prices line up */
+  }
+
+  /* Hairline is the default border color everywhere. */
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-hairline);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 400;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  img,
+  video {
+    display: block;
+    max-width: 100%;
+  }
+
+  :focus-visible {
+    outline: 1px solid var(--color-ink);
+    outline-offset: 3px;
+  }
+
+  ::selection {
+    background-color: var(--color-ink);
+    color: var(--color-canvas);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-delay: 0ms !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ==========================================================================
+   Components
+   Single-class selectors only, so specificity stays flat and Tailwind
+   utilities (same layer order, later) can always override spacing.
+   ========================================================================== */
+
+@layer components {
+  /* ---- Type roles ------------------------------------------------------ */
+  /* Editorial statement. Thin, sentence case, tight. One per page. */
+  .display {
+    font-size: var(--text-display);
+    line-height: var(--text-display--line-height);
+    letter-spacing: var(--text-display--letter-spacing);
+    font-weight: var(--text-display--font-weight);
+  }
+
+  /* Section and page headings: small, bold, uppercase. */
+  .headline {
+    font-size: var(--text-headline);
+    line-height: var(--text-headline--line-height);
+    letter-spacing: var(--text-headline--letter-spacing);
+    font-weight: var(--text-headline--font-weight);
+    text-transform: uppercase;
+  }
+
+  /* Bold uppercase 12px label: nav items, meta headings, field labels. */
+  .label {
+    font-size: var(--text-caption);
+    line-height: var(--text-caption--line-height);
+    letter-spacing: -0.05em;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  /* Tiny sentence-case marker pinned to a product plate ("New"). */
+  .badge {
+    font-size: var(--text-micro);
+    line-height: var(--text-micro--line-height);
+    letter-spacing: var(--text-micro--letter-spacing);
+    font-weight: 500;
+  }
+
+  /* Category / filter tab: quiet until current, then bold uppercase. */
+  .tab {
+    font-size: var(--text-caption);
+    line-height: var(--text-caption--line-height);
+    letter-spacing: var(--text-caption--letter-spacing);
+    font-weight: 500;
+    color: var(--color-ink-muted);
+    white-space: nowrap;
+    transition: color 0.2s var(--ease-standard);
+  }
+
+  .tab:hover,
+  .tab[aria-current] {
+    color: var(--color-ink);
+  }
+
+  .tab[aria-current] {
+    letter-spacing: -0.05em;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  /* Page-load reveal: each line fades up once. Hero only. */
+  .rise-line {
+    display: block;
+    animation: rise 1s var(--ease-rise) both;
+  }
+
+  .rise-line:nth-child(2) {
+    animation-delay: 0.1s;
+  }
+
+  .rise-line:nth-child(3) {
+    animation-delay: 0.2s;
+  }
+
+  /* ---- Buttons: square, flat, uppercase, 48px touch target ------------ */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 3rem;
+    padding: 1rem 1.5rem;
+    border: 1px solid transparent;
+    border-radius: 0;
+    font-size: var(--text-caption);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition:
+      background-color 0.2s var(--ease-standard),
+      border-color 0.2s var(--ease-standard),
+      color 0.2s var(--ease-standard);
+  }
+
+  .btn:disabled,
+  .btn[aria-disabled="true"] {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .btn-lg {
+    min-height: 3.5rem;
+    padding-inline: 2rem;
+  }
+
+  /* Full-width: the default for primary actions on small screens. */
+  .btn-block {
+    display: flex;
+    width: 100%;
+  }
+
+  .btn-primary {
+    background-color: var(--color-accent);
+    border-color: var(--color-accent);
+    color: var(--color-on-accent);
+  }
+
+  .btn-secondary {
+    border-color: var(--color-ink);
+    color: var(--color-ink);
+  }
+
+  /* For use over imagery or on an inverse section. */
+  .btn-light {
+    background-color: var(--color-canvas);
+    border-color: var(--color-canvas);
+    color: var(--color-ink);
+  }
+
+  @media (hover: hover) {
+    .btn-primary:hover {
+      background-color: var(--color-accent-hover);
+      border-color: var(--color-accent-hover);
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--color-ink);
+      color: var(--color-canvas);
+    }
+
+    .btn-light:hover {
+      background-color: transparent;
+      color: var(--color-canvas);
+    }
+  }
+
+  /* ---- Links ---------------------------------------------------------- */
+  /* Inline text link: ink, thin underline that drops away on hover. */
+  .link {
+    color: var(--color-link);
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.25em;
+    transition: text-decoration-color 0.2s var(--ease-standard);
+  }
+
+  /* Standalone call to action: an underlined 12px sentence-case link. */
+  .link-cta {
+    font-size: var(--text-caption);
+    line-height: var(--text-caption--line-height);
+    letter-spacing: var(--text-caption--letter-spacing);
+    font-weight: 500;
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.35em;
+    transition: text-decoration-color 0.2s var(--ease-standard);
+  }
+
+  @media (hover: hover) {
+    .link:hover,
+    .link-cta:hover {
+      text-decoration-color: transparent;
+    }
+  }
+
+  /* Navigation / footer link: plain, underline appears on hover. */
+  .link-quiet {
+    color: inherit;
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.35em;
+    text-decoration-color: transparent;
+    transition: text-decoration-color 0.2s var(--ease-standard);
+  }
+
+  @media (hover: hover) {
+    .link-quiet:hover {
+      text-decoration-color: currentColor;
+    }
+  }
+
+  /* ---- Surfaces ------------------------------------------------------- */
+  /* Product plate: near-white, square, no shadow. The whole card (image
+     and label) sits on it; images use object-contain so the product floats. */
+  .tile {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--color-surface);
+  }
+
+  /* Name and price under the image, inset 12px from the plate edge. */
+  .tile-label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.75rem 0.75rem 2rem;
+    font-size: var(--text-caption);
+    line-height: var(--text-caption--line-height);
+    letter-spacing: var(--text-caption--letter-spacing);
+  }
+
+  /* Header over hero imagery. A page that opens with a `.hero-overlay`
+     section gets a transparent header with light text; it turns solid once
+     the hero has scrolled past. Pure CSS (scroll-driven animation); browsers
+     without it keep the solid header above the hero. */
+  @supports (animation-timeline: scroll()) {
+    .hero-overlay {
+      margin-top: calc(var(--nav-height) * -1);
+    }
+
+    body:has(.hero-overlay) .site-header {
+      animation: nav-solidify linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 75svh;
+    }
+  }
+
+  /* Media that fills its box edge to edge (campaign imagery). */
+  .media-cover {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Text over imagery: a bottom scrim keeps it legible. */
+  .media-scrim {
+    background-image: linear-gradient(
+      to top,
+      var(--color-scrim),
+      transparent 60%
+    );
+  }
+
+  /* Sticky navigation bar: solid canvas, hairline beneath. */
+  .glass {
+    background-color: color-mix(in srgb, var(--color-canvas) 96%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* ---- Form field: square, hairline, 48px ----------------------------- */
+  .field {
+    display: block;
+    width: 100%;
+    min-height: 3rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--color-hairline);
+    border-radius: 0;
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-size: var(--text-body);
+    transition: border-color 0.2s var(--ease-standard);
+  }
+
+  .field::placeholder {
+    color: var(--color-ink-muted);
+  }
+
+  .field:focus {
+    outline: none;
+    border-color: var(--color-ink);
+  }
+}
+
+@keyframes nav-solidify {
+  0%,
+  92% {
+    background-color: transparent;
+    border-color: transparent;
+    color: #ffffff;
+    backdrop-filter: blur(0);
+  }
+  100% {
+    background-color: color-mix(in srgb, var(--color-canvas) 96%, transparent);
+    border-color: var(--color-hairline);
+    color: var(--color-ink);
+    backdrop-filter: blur(12px);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.25em);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   Layout utilities (variant-aware: md:container-wide etc. work)
+   ========================================================================== */
+
+/* Content column with responsive side gutters. */
+@utility container-page {
+  width: 100%;
+  max-width: calc(var(--container-page) + var(--gutter) * 2);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+@utility container-wide {
+  width: 100%;
+  max-width: calc(var(--container-wide) + var(--gutter) * 2);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+@utility container-prose {
+  width: 100%;
+  max-width: calc(var(--container-prose) + var(--gutter) * 2);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* Full-bleed: no max width, no gutters. Campaign imagery, grids on mobile. */
+@utility container-bleed {
+  width: 100%;
+  margin-inline: 0;
+  padding-inline: 0;
+}
+
+/* Compact vertical rhythm for text blocks between imagery: 40 → 56. */
+@utility section-y {
+  padding-block: 2.5rem;
+
+  @media (width >= 48rem) {
+    padding-block: 3.5rem;
+  }
+}
+
+/* Product grid: 2 → 3 → 4 columns with 1px seams, so the plates read as one
+   continuous wall. Run it edge to edge (container-bleed). */
+@utility grid-tiles {
+  display: grid;
+  gap: 1px;
+  /* Dense, so products back-fill the cells beside a tile-feature. */
+  grid-auto-flow: dense;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  @media (width >= 48rem) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @media (width >= 64rem) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Campaign image inside grid-tiles: full width on small screens, a 2×2
+   block of product cells from md. */
+@utility tile-feature {
+  grid-column: span 2;
+
+  @media (width >= 48rem) {
+    grid-row: span 2;
+  }
+}
+
+/* Campaign split: stacked on small screens, two flush panels from md. */
+@utility grid-split {
+  display: grid;
+  gap: 0;
+  grid-template-columns: minmax(0, 1fr);
+
+  @media (width >= 48rem) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Vertical stack with consistent rhythm between heading, copy, actions. */
+@utility stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@utility stack-lg {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
