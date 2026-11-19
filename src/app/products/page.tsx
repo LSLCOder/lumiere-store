@@ -7,8 +7,8 @@ export const metadata: Metadata = {
   title: "Shop",
 };
 
-export default function ProductsPage() {
-  const products = getProducts();
+export default async function ProductsPage() {
+  const products = await getProducts();
 
   return (
     <>

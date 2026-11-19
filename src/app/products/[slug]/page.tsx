@@ -9,19 +9,19 @@ import {
   getProductBySlug,
   getProducts,
   getRelatedProducts,
-  getStockState,
 } from "@/lib/products";
+import { getStockState } from "@/lib/stock";
 import { formatPrice } from "@/lib/utils";
 
-export function generateStaticParams() {
-  return getProducts().map((product) => ({ slug: product.slug }));
+export async function generateStaticParams() {
+  return (await getProducts()).map((product) => ({ slug: product.slug }));
 }
 
 export async function generateMetadata({
   params,
 }: PageProps<"/products/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug);
   if (!product) return { title: "Product not found" };
   return { title: product.name, description: product.description };
 }
@@ -30,13 +30,13 @@ export default async function ProductPage({
   params,
 }: PageProps<"/products/[slug]">) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug);
 
   if (!product) notFound();
 
   const soldOut = getStockState(product) === "sold-out";
-  const related = getRelatedProducts(product);
-  const total = getProducts().length;
+  const related = await getRelatedProducts(product);
+  const total = (await getProducts()).length;
   const details = [
     { term: "Category", value: product.category },
     { term: "Material", value: product.material },

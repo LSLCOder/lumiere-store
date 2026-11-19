@@ -1,5 +1,5 @@
 import type { Product } from "@/types/product";
-import { getStockState } from "@/lib/products";
+import { getStockState } from "@/lib/stock";
 import { cn } from "@/lib/utils";
 
 /**

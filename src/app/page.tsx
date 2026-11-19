@@ -8,9 +8,9 @@ import { getCollections } from "@/lib/collections";
 import { unsplash } from "@/lib/images";
 import { getProducts } from "@/lib/products";
 
-export default function Home() {
-  const products = getProducts();
-  const collections = getCollections();
+export default async function Home() {
+  const products = await getProducts();
+  const collections = await getCollections();
 
   return (
     <>

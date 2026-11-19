@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Product } from "@/types/product";
-import { getStockState } from "@/lib/products";
+import { getStockState } from "@/lib/stock";
 import { formatPrice } from "@/lib/utils";
 
 /**
