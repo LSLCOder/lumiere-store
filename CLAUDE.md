@@ -10,6 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run build`: production build. It also type-checks and prerenders every route, so it is the most complete check
 - `npm run typecheck`: `next typegen && tsc --noEmit`. Run typegen after adding or renaming routes, or the global `PageProps<"/route">` / `LayoutProps<"/route">` types will reject the new route
 - `npm run lint`: ESLint (Next.js config)
+- `npm run db:generate` / `db:migrate` / `db:seed`: write a migration from the schema, apply migrations, load the sample catalog (safe to re-run)
 - `npm run format` / `npm run format:check`: Prettier, with `prettier-plugin-tailwindcss` sorting class names
 
 There is no test framework set up yet.
@@ -22,15 +23,21 @@ This is Next.js 16 with React 19, and the APIs may not match older versions. Per
 
 ## Architecture
 
-The project is a minimal storefront. Auth, database, cart, payments and admin are deliberately not built yet.
+The project is a minimal storefront backed by PostgreSQL (hosted on Neon) through Drizzle ORM. Auth, cart, orders, payments, product variants and admin are deliberately not built yet.
 
-- **Data access goes through `src/lib/products.ts`.** Pages call `getProducts()` / `getProductBySlug()` and never import the raw catalog. The catalog is currently a static placeholder array, so a real data source can replace it inside these functions without touching pages.
+- **Database conventions** (PostgreSQL on Neon, Drizzle ORM, schema in `src/db/schema.ts`):
+  - Keep it simple: two tables, `categories` and `products`. Stock is the `stock` column on the product and price is integer `price_cents`. Do not add tables for inventory, carts, orders, payments, wishlists, reviews or variants unless asked.
+  - Pages and components never query the database. They call the async functions in `src/lib/products.ts` and `src/lib/collections.ts`, which return the types in `src/types/product.ts`.
+  - Schema changes go through migrations: edit the schema, `npm run db:generate`, review the SQL in `drizzle/`, then `npm run db:migrate`. Never use `drizzle-kit push`. Generated SQL can drop a column or table before its data is copied, so reorder it by hand when moving data.
+  - `.env.local` holds `DATABASE_URL` (Neon pooled, used by the app) and `DATABASE_URL_UNPOOLED` (direct, used by migrations and the seed). Claude cannot read or write `.env*` files here.
+  - Catalog reads are cached for about a minute (`"use cache"`), so stock and prices can be that stale. `npm run build` and `npm run dev` need the database reachable.
+  - `npm run db:seed` resets the sample rows by slug; don't run it over real edits.
 - **Pages fetch data and components only render it.** Route files in `src/app/` load data and pass it to components in `src/components/` as props (e.g. `page → ProductGrid → ProductCard`). Everything is a server component; add `"use client"` only to components that need interactivity.
 - **Product detail pages are static.** `src/app/products/[slug]/page.tsx` uses `generateStaticParams()` from the catalog and calls `notFound()` for unknown slugs. It is composed from `ProductGallery` (flush photos: a swipeable row on small screens, a stack beside sticky details from md), `StockStatus` and a `ProductGrid` of `getRelatedProducts()`. There is no buy button because the cart is not built.
-- **Stock state is derived, never stored.** `Product.stock` is a unit count; `getStockState()` in `src/lib/products.ts` turns it into `in-stock` / `low-stock` / `sold-out`. Sold-out products show a "Sold out" badge on their card and page.
+- **Stock state is derived, never stored.** `Product.stock` is a unit count; `getStockState()` in `src/lib/stock.ts` turns it into `in-stock` / `low-stock` / `sold-out`. Sold-out products show a "Sold out" badge on their card and page.
 - **`cn()` drops a font-size class when a text color follows it** for the custom sizes (`text-caption text-ink-muted` loses `text-caption`, because tailwind-merge reads both as colors). Keep the two on separate elements or out of `cn()`.
 - **Imagery is sample photography hot-linked from Unsplash.** Build URLs with `unsplash(photoId, width)` from `src/lib/images.ts`; the host is allowed in `next.config.ts` (`images.remotePatterns`). Render with `next/image` (`fill` + `sizes` inside a `.tile`; `preload` for the first image on a page, since `priority` is deprecated in Next 16). Text over photos is `text-white` on a `.media-scrim`.
-- **The homepage** (`src/app/page.tsx`) is composed from `src/components/home/` (`Hero`, `CampaignPanel`) plus `ProductGrid`, which takes an optional `feature` tile. Collections come from `getCollections()` in `src/lib/collections.ts` and link to `/products` until category filtering exists.
+- **The homepage** (`src/app/page.tsx`) is composed from `src/components/home/` (`Hero`, `CampaignPanel`) plus `ProductGrid`, which takes an optional `feature` tile. Collections come from `getCollections()` in `src/lib/collections.ts`, which returns one per row of the `categories` table, and link to `/products` until category filtering exists.
 - **Money is stored as integer cents** (`Product.price`). Format it with `formatPrice(cents, currency)` from `src/lib/utils.ts`.
 - **Class names** are combined with `cn()` (clsx + tailwind-merge) from `src/lib/utils.ts`.
 
