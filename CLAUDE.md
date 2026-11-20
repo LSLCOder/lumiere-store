@@ -11,6 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run typecheck`: `next typegen && tsc --noEmit`. Run typegen after adding or renaming routes, or the global `PageProps<"/route">` / `LayoutProps<"/route">` types will reject the new route
 - `npm run lint`: ESLint (Next.js config)
 - `npm run db:generate` / `db:migrate` / `db:seed`: write a migration from the schema, apply migrations, load the sample catalog (safe to re-run)
+- `npm run auth:make-admin -- <email>`: give an existing account the admin role
 - `npm run format` / `npm run format:check`: Prettier, with `prettier-plugin-tailwindcss` sorting class names
 
 There is no test framework set up yet.
@@ -23,15 +24,23 @@ This is Next.js 16 with React 19, and the APIs may not match older versions. Per
 
 ## Architecture
 
-The project is a minimal storefront backed by PostgreSQL (hosted on Neon) through Drizzle ORM. Auth, cart, orders, payments, product variants and admin are deliberately not built yet.
+The project is a minimal storefront backed by PostgreSQL (hosted on Neon) through Drizzle ORM, with email-and-password accounts from Better Auth. Cart, orders, payments, product variants and admin features (beyond a protected placeholder page) are deliberately not built yet.
 
 - **Database conventions** (PostgreSQL on Neon, Drizzle ORM, schema in `src/db/schema.ts`):
-  - Keep it simple: two tables, `categories` and `products`. Stock is the `stock` column on the product and price is integer `price_cents`. Do not add tables for inventory, carts, orders, payments, wishlists, reviews or variants unless asked.
+  - Keep the catalog simple: two tables, `categories` and `products` (the auth tables are in `src/db/auth-schema.ts`). Stock is the `stock` column on the product and price is integer `price_cents`. Do not add tables for inventory, carts, orders, payments, wishlists, reviews or variants unless asked.
   - Pages and components never query the database. They call the async functions in `src/lib/products.ts` and `src/lib/collections.ts`, which return the types in `src/types/product.ts`.
   - Schema changes go through migrations: edit the schema, `npm run db:generate`, review the SQL in `drizzle/`, then `npm run db:migrate`. Never use `drizzle-kit push`. Generated SQL can drop a column or table before its data is copied, so reorder it by hand when moving data.
   - `.env.local` holds `DATABASE_URL` (Neon pooled, used by the app) and `DATABASE_URL_UNPOOLED` (direct, used by migrations and the seed). Claude cannot read or write `.env*` files here.
   - Catalog reads are cached for about a minute (`"use cache"`), so stock and prices can be that stale. `npm run build` and `npm run dev` need the database reachable.
   - `npm run db:seed` resets the sample rows by slug; don't run it over real edits.
+- **Auth conventions** (Better Auth 1.7, config in `src/lib/auth.ts`):
+  - Email and password only. Don't add social login, password reset, verification or 2FA unless asked.
+  - `src/db/auth-schema.ts` is hand-written to match Better Auth's generated Drizzle schema, because its CLI needs Node 22.12+ and this machine has 20.17. Re-check it against the generator when upgrading Better Auth or adding plugins.
+  - Access control is server-side: protected pages call `requireUser()` / `requireAdmin()` from `src/lib/session.ts` inside `<Suspense>`, and every admin server action starts with `assertAdmin()`. `src/proxy.ts` only checks that a session cookie exists.
+  - Never read the session in the header, layouts or `"use cache"` functions, so catalog pages stay static.
+  - `users.role` is `customer` or `admin`, never accepted from sign-up (`input: false`); change it only with `auth:make-admin`.
+  - After sign-in, sign-up or sign-out, do a full page load (`window.location.assign`): client navigation can reuse pages prefetched under the old session.
+  - `.env.local` also needs `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL`; production throws without the secret.
 - **Pages fetch data and components only render it.** Route files in `src/app/` load data and pass it to components in `src/components/` as props (e.g. `page → ProductGrid → ProductCard`). Everything is a server component; add `"use client"` only to components that need interactivity.
 - **Product detail pages are static.** `src/app/products/[slug]/page.tsx` uses `generateStaticParams()` from the catalog and calls `notFound()` for unknown slugs. It is composed from `ProductGallery` (flush photos: a swipeable row on small screens, a stack beside sticky details from md), `StockStatus` and a `ProductGrid` of `getRelatedProducts()`. There is no buy button because the cart is not built.
 - **Stock state is derived, never stored.** `Product.stock` is a unit count; `getStockState()` in `src/lib/stock.ts` turns it into `in-stock` / `low-stock` / `sold-out`. Sold-out products show a "Sold out" badge on their card and page.
