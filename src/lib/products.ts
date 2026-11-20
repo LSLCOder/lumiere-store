@@ -61,6 +61,20 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
   return row ? toProduct(row) : null;
 }
 
+/** Products in one category (by category slug), in shop order. */
+export async function getProductsByCategory(
+  categorySlug: string,
+): Promise<Product[]> {
+  "use cache";
+  cacheTag("products");
+  cacheLife("minutes");
+
+  const rows = await selectProducts()
+    .where(eq(categories.slug, categorySlug))
+    .orderBy(asc(products.id));
+  return rows.map(toProduct);
+}
+
 /**
  * The most recently added products, newest first. There is no "added on"
  * date, so newest means the highest id (ids grow as rows are inserted).
