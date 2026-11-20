@@ -8,7 +8,7 @@ const navItems = [
 
 /**
  * Three-column bar: navigation left, wordmark centered, utilities right
- * (account / bag slot, empty until those features exist).
+ * (search for now; account and bag go here once they exist).
  */
 export function Header() {
   return (
@@ -17,9 +17,9 @@ export function Header() {
         as="nav"
         size="wide"
         aria-label="Main"
-        className="grid h-(--nav-height) grid-cols-[1fr_auto_1fr] items-center gap-6"
+        className="grid h-(--nav-height) grid-cols-[1fr_auto_1fr] items-center gap-2 md:gap-6"
       >
-        <ul className="flex items-center gap-6 md:gap-8">
+        <ul className="flex items-center gap-4 md:gap-8">
           {navItems.map((item) => (
             <li key={item.href}>
               <Link href={item.href} className="link-quiet label">
@@ -34,7 +34,11 @@ export function Header() {
         >
           Lumière
         </Link>
-        <div className="justify-self-end" />
+        <div className="justify-self-end">
+          <Link href="/search" className="link-quiet label">
+            Search
+          </Link>
+        </div>
       </Container>
     </header>
   );

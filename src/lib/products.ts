@@ -1,4 +1,4 @@
-import { asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, or } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/db";
 import { categories, products } from "@/db/schema";
@@ -59,6 +59,35 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
 
   const [row] = await selectProducts().where(eq(products.slug, slug)).limit(1);
   return row ? toProduct(row) : null;
+}
+
+/**
+ * Products matching a shopper's search, in shop order. Every word must appear
+ * somewhere in the name, description, material or category (any case).
+ */
+export async function searchProducts(query: string): Promise<Product[]> {
+  "use cache";
+  cacheTag("products");
+  cacheLife("minutes");
+
+  const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [];
+
+  const conditions = words.slice(0, 8).map((word) => {
+    // `%` and `_` are wildcards in LIKE; match them literally.
+    const pattern = `%${word.replace(/[\\%_]/g, "\\$&")}%`;
+    return or(
+      ilike(products.name, pattern),
+      ilike(products.description, pattern),
+      ilike(products.material, pattern),
+      ilike(categories.name, pattern),
+    );
+  });
+
+  const rows = await selectProducts()
+    .where(and(...conditions))
+    .orderBy(asc(products.id));
+  return rows.map(toProduct);
 }
 
 /** Products in one category (by category slug), in shop order. */
