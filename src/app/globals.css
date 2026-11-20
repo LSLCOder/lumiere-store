@@ -484,6 +484,17 @@
     outline: none;
     border-color: var(--color-ink);
   }
+
+  /* Invalid: solid ink border, paired with a message under the field (no
+     colour, so the monochrome palette holds). */
+  .field[aria-invalid="true"] {
+    border-color: var(--color-ink);
+  }
+
+  .field:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 }
 
 @keyframes nav-solidify {
