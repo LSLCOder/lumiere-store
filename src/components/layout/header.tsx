@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { Container } from "@/components/ui/container";
 
-const navItems = [{ href: "/products", label: "Shop" }];
+const navItems = [
+  { href: "/products", label: "Shop" },
+  { href: "/new-arrivals", label: "New" },
+];
 
 /**
  * Three-column bar: navigation left, wordmark centered, utilities right

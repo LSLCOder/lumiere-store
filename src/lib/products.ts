@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { asc, desc, eq } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/db";
 import { categories, products } from "@/db/schema";
@@ -59,6 +59,19 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
 
   const [row] = await selectProducts().where(eq(products.slug, slug)).limit(1);
   return row ? toProduct(row) : null;
+}
+
+/**
+ * The most recently added products, newest first. There is no "added on"
+ * date, so newest means the highest id (ids grow as rows are inserted).
+ */
+export async function getNewArrivals(limit = 4): Promise<Product[]> {
+  "use cache";
+  cacheTag("products");
+  cacheLife("minutes");
+
+  const rows = await selectProducts().orderBy(desc(products.id)).limit(limit);
+  return rows.map(toProduct);
 }
 
 /** Other products to show under a product: same category first. */
